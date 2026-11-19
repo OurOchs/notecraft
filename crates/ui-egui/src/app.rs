@@ -1188,6 +1188,8 @@ pub struct NoteCraftApp {
     native_hosted: bool,
     native_close: std::cell::Cell<bool>,
     page_revision: Option<crate::windows::Revision>,
+    watcher: notecraft_engine::FileWatcher,
+    watcher_woken: bool,
     /// When, on the window's clock, the page was last checked for another window's writes.
     changes_checked_at: Option<f64>,
     page_conflict: bool,
@@ -1512,6 +1514,8 @@ impl NoteCraftApp {
             native_hosted: false,
             native_close: std::cell::Cell::new(false),
             page_revision: None,
+            watcher: notecraft_engine::FileWatcher::new(),
+            watcher_woken: false,
             changes_checked_at: None,
             page_conflict: false,
             search: String::new(),
@@ -12351,6 +12355,21 @@ impl NoteCraftApp {
                 let _ = self.session.settings.set(RECENT_FONTS_KEY, text);
             },
         );
+        if !self.watcher_woken {
+            let wake_ctx = ui.ctx().clone();
+            self.watcher.set_wake(std::sync::Arc::new(move || wake_ctx.request_repaint()));
+            self.watcher_woken = true;
+        }
+        let open_page = self.editor.as_ref().map(|ed| ed.dir.clone());
+        self.watcher.watch(self.session.root(), open_page.as_deref(), self.page_revision.clone());
+        let watched = self.watcher.take_changes();
+        if watched.tree && !self.saver.busy() && self.ink_saving.is_none() {
+            crate::fscache::forget_all();
+            self.session.refresh();
+        }
+        if watched.page {
+            crate::fscache::forget_all();
+        }
         // Another window's writes are looked for before anything typed or clicked here is acted
         // on, and twice a second besides. Not every frame: each look asks the disk about the page
         // and its ink, and on a synced folder that held up every frame of a scroll or a pinch.
@@ -12368,7 +12387,7 @@ impl NoteCraftApp {
                 )
             })
         });
-        let due = acting || self.changes_checked_at.is_none_or(|at| now - at >= 0.5 || now < at);
+        let due = watched.page || acting || self.changes_checked_at.is_none_or(|at| now - at >= 0.5 || now < at);
         if due {
             self.changes_checked_at = Some(now);
             self.check_page_changes();
@@ -12395,6 +12414,9 @@ impl NoteCraftApp {
         {
             // Only the ink this view just wrote changed. Other changes must be checked next frame.
             self.page_revision = Some(current);
+            if let Some(dir) = self.editor.as_ref().map(|ed| ed.dir.as_path()) {
+                self.watcher.note_own_revision(dir, self.page_revision.clone());
+            }
         }
     }
 

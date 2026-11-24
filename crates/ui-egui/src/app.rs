@@ -13449,7 +13449,7 @@ impl NoteCraftApp {
                                 let fill = Color32::from_rgb(colour.0, colour.1, colour.2);
                                 match tool {
                                     notecraft_ink::Tool::Highlighter => painter.rect_filled(rect.shrink(4.0), 3.0, fill),
-                                    notecraft_ink::Tool::Pen | notecraft_ink::Tool::Pencil => painter.circle_filled(rect.center(), 7.5, fill),
+                                    _ => painter.circle_filled(rect.center(), 7.5, fill),
                                 }
                                 if selected {
                                     painter.rect_stroke(rect.shrink(0.5), 4.0, egui::Stroke::new(1.5, tokens.accent), egui::StrokeKind::Inside);
@@ -13459,37 +13459,85 @@ impl NoteCraftApp {
                                 }
                             }
                             ui.separator();
-                            if icon_toggle(ui, Icon::Eraser, pointer == ribbon::Pointer::Erase, &tokens, crate::tl_id!("ui.draw_bar_eraser"), crate::tl_id!("ui.draw_bar_eraser")).clicked() {
+                            if icon_toggle(
+                                ui,
+                                Icon::Eraser,
+                                pointer == ribbon::Pointer::Erase,
+                                &tokens,
+                                crate::tl_id!("ui.draw_bar_eraser"),
+                                crate::tl_id!("ui.draw_bar_eraser"),
+                            )
+                            .clicked()
+                            {
                                 set_pointer = Some(ribbon::Pointer::Erase);
                             }
-                            if icon_toggle(ui, Icon::Lasso, pointer == ribbon::Pointer::Lasso, &tokens, crate::tl_id!("ui.draw_bar_lasso"), crate::tl_id!("ui.draw_bar_lasso")).clicked() {
+                            if icon_toggle(
+                                ui,
+                                Icon::Lasso,
+                                pointer == ribbon::Pointer::Lasso,
+                                &tokens,
+                                crate::tl_id!("ui.draw_bar_lasso"),
+                                crate::tl_id!("ui.draw_bar_lasso"),
+                            )
+                            .clicked()
+                            {
                                 set_pointer = Some(ribbon::Pointer::Lasso);
                             }
-                            if icon_toggle(ui, Icon::Hand, pointer == ribbon::Pointer::Pan, &tokens, crate::tl_id!("ui.draw_bar_pan"), crate::tl_id!("ui.draw_bar_pan")).clicked() {
+                            if icon_toggle(
+                                ui,
+                                Icon::Hand,
+                                pointer == ribbon::Pointer::Pan,
+                                &tokens,
+                                crate::tl_id!("ui.draw_bar_pan"),
+                                crate::tl_id!("ui.draw_bar_pan"),
+                            )
+                            .clicked()
+                            {
                                 set_pointer = Some(ribbon::Pointer::Pan);
                             }
                             ui.separator();
-                            if icon_toggle(ui, Icon::Undo, false, &tokens, crate::tl_id!("ui.draw_bar_undo"), crate::tl_id!("ui.draw_bar_undo")).clicked() {
+                            if icon_toggle(ui, Icon::Undo, false, &tokens, crate::tl_id!("ui.draw_bar_undo"), crate::tl_id!("ui.draw_bar_undo"))
+                                .clicked()
+                            {
                                 do_undo = true;
                             }
-                            if icon_toggle(ui, Icon::Redo, false, &tokens, crate::tl_id!("ui.draw_bar_redo"), crate::tl_id!("ui.draw_bar_redo")).clicked() {
+                            if icon_toggle(ui, Icon::Redo, false, &tokens, crate::tl_id!("ui.draw_bar_redo"), crate::tl_id!("ui.draw_bar_redo"))
+                                .clicked()
+                            {
                                 do_redo = true;
                             }
-                            if icon_toggle(ui, Icon::ExitFullPage, false, &tokens, crate::tl_id!("ui.exit_focus_draw"), crate::tl_id!("ui.exit_focus_draw")).clicked() {
+                            if icon_toggle(
+                                ui,
+                                Icon::ExitFullPage,
+                                false,
+                                &tokens,
+                                crate::tl_id!("ui.exit_focus_draw"),
+                                crate::tl_id!("ui.exit_focus_draw"),
+                            )
+                            .clicked()
+                            {
                                 exit_bar = true;
                             }
                         });
                     });
             });
-        if toggle_min { self.draw_bar_minimized = !self.draw_bar_minimized; }
-        if let Some(p) = set_pointer { self.pointer = p; }
+        if toggle_min {
+            self.draw_bar_minimized = !self.draw_bar_minimized;
+        }
+        if let Some(p) = set_pointer {
+            self.pointer = p;
+        }
         if let Some(idx) = pick_pen {
             self.nib = idx.min(self.rack.len().saturating_sub(1));
             self.pointer = ribbon::Pointer::Draw;
             self.remember_rack();
         }
-        if do_undo { self.undo(); }
-        if do_redo { self.step_back(false); }
+        if do_undo {
+            self.undo();
+        }
+        if do_redo {
+            self.step_back(false);
+        }
         if exit_bar {
             self.draw_bar_open = false;
             self.draw_bar_minimized = false;

@@ -13447,9 +13447,10 @@ impl NoteCraftApp {
                                     painter.rect_filled(rect, 4.0, if selected { tokens.row_selected } else { tokens.row_hover });
                                 }
                                 let fill = Color32::from_rgb(colour.0, colour.1, colour.2);
-                                match tool {
-                                    notecraft_ink::Tool::Highlighter => painter.rect_filled(rect.shrink(4.0), 3.0, fill),
-                                    _ => painter.circle_filled(rect.center(), 7.5, fill),
+                                if tool == notecraft_ink::Tool::Highlighter {
+                                    painter.rect_filled(rect.shrink(4.0), 3.0, fill);
+                                } else {
+                                    painter.circle_filled(rect.center(), 7.5, fill);
                                 }
                                 if selected {
                                     painter.rect_stroke(rect.shrink(0.5), 4.0, egui::Stroke::new(1.5, tokens.accent), egui::StrokeKind::Inside);

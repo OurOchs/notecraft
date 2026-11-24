@@ -1517,6 +1517,9 @@ pub struct NoteCraftApp {
     unread_checked: Option<Instant>,
     /// The page fills the window: the notebooks are hidden until it is turned off.
     full_page: bool,
+    draw_bar_open: bool,
+    draw_bar_minimized: bool,
+    draw_bar_prev_ribbon: bool,
     /// The window is phone-width, so it shows the notebooks or the page, not both
     /// (`compact.rs`, issue #12). Worked out from the window's width every frame.
     compact: bool,
@@ -1735,6 +1738,9 @@ impl NoteCraftApp {
             unread: std::collections::HashSet::new(),
             unread_checked: None,
             full_page: false,
+            draw_bar_open: false,
+            draw_bar_minimized: false,
+            draw_bar_prev_ribbon: false,
             compact: false,
             compact_full_page: false,
             page_opened: false,
@@ -9981,6 +9987,7 @@ impl NoteCraftApp {
         let mut changed = false;
         let show_source = self.show_source;
         let full_page = self.full_page;
+        let draw_bar_open = self.draw_bar_open;
         let (hide_title, rules) = (self.hide_title, self.paper_now());
         let hide_authors = self.hide_authors;
         // The grid a moved or resized box snaps to: the paper's own lines, or 12 points on plain
@@ -9995,7 +10002,7 @@ impl NoteCraftApp {
         });
         // What the title area is showing, so the page's words do not say it again.
         let shown_title = self.editor.as_ref().map(|e| e.title.clone()).unwrap_or_default();
-        let (mut toggle_source, mut toggle_full_page, mut focus_search) = (false, false, false);
+        let (mut toggle_source, mut toggle_full_page, mut toggle_draw_bar, mut focus_search) = (false, false, false, false);
         let mut from_blocks = false;
         let mut boxes_moved = false;
         let mut cols_moved = false;
@@ -10035,43 +10042,57 @@ impl NoteCraftApp {
             }
             // One id for the title, whether it is drawn as words or as a text box.
             let title_id = page_title_id(ui.ctx());
-            ui.horizontal_wrapped(|ui| {
-                // File details live in the status bar. Keep only compact page controls
-                // here, with a drop instruction while a file is actually over the window.
-                if ui.input(|i| !i.raw.hovered_files.is_empty()) {
-                    ui.label(egui::RichText::new(crate::tl_id!("ui.drop_a_file_onto_the_page_to_add_it")).small().color(tokens.muted));
-                }
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    // The page controls, in OneNote's order: full page, search, source.
-                    let full = icon_toggle(
-                        ui,
-                        if full_page { Icon::ExitFullPage } else { Icon::FullPage },
-                        full_page,
-                        &tokens,
-                        crate::tl_id!("ui.full_page"),
-                        if full_page { crate::tl_id!("ui.show_the_notebooks_again") } else { crate::tl_id!("ui.give_the_page_the_whole_window") },
-                    );
-                    if full.clicked() {
-                        toggle_full_page = true;
+            if !(draw_bar_open && full_page) {
+                ui.horizontal_wrapped(|ui| {
+                    // File details live in the status bar. Keep only compact page controls
+                    // here, with a drop instruction while a file is actually over the window.
+                    if ui.input(|i| !i.raw.hovered_files.is_empty()) {
+                        ui.label(egui::RichText::new(crate::tl_id!("ui.drop_a_file_onto_the_page_to_add_it")).small().color(tokens.muted));
                     }
-                    if icon_toggle(ui, Icon::Search, false, &tokens, crate::tl_id!("ui.search"), crate::tl_id!("ui.search_all_pages")).clicked() {
-                        focus_search = true;
-                    }
-                    if icon_toggle(
-                        ui,
-                        Icon::Code,
-                        show_source,
-                        &tokens,
-                        crate::tl_id!("ui.page_source"),
-                        if show_source { crate::tl_id!("ui.hide_the_page_source") } else { crate::tl_id!("ui.show_the_page_source") },
-                    )
-                    .clicked()
-                    {
-                        toggle_source = true;
-                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        // The page controls, in OneNote's order: full page, search, source.
+                        let full = icon_toggle(
+                            ui,
+                            if full_page { Icon::ExitFullPage } else { Icon::FullPage },
+                            full_page,
+                            &tokens,
+                            crate::tl_id!("ui.full_page"),
+                            if full_page { crate::tl_id!("ui.show_the_notebooks_again") } else { crate::tl_id!("ui.give_the_page_the_whole_window") },
+                        );
+                        if full.clicked() {
+                            toggle_full_page = true;
+                        }
+                        if icon_toggle(
+                            ui,
+                            Icon::Pen,
+                            draw_bar_open,
+                            &tokens,
+                            crate::tl_id!("ui.quick_draw_bar"),
+                            crate::tl_id!("ui.quick_draw_bar_tip"),
+                        )
+                        .clicked()
+                        {
+                            toggle_draw_bar = true;
+                        }
+                        if icon_toggle(ui, Icon::Search, false, &tokens, crate::tl_id!("ui.search"), crate::tl_id!("ui.search_all_pages")).clicked() {
+                            focus_search = true;
+                        }
+                        if icon_toggle(
+                            ui,
+                            Icon::Code,
+                            show_source,
+                            &tokens,
+                            crate::tl_id!("ui.page_source"),
+                            if show_source { crate::tl_id!("ui.hide_the_page_source") } else { crate::tl_id!("ui.show_the_page_source") },
+                        )
+                        .clicked()
+                        {
+                            toggle_source = true;
+                        }
+                    });
                 });
-            });
-            ui.separator();
+                ui.separator();
+            }
             let height = ui.available_height();
             // How far the page's content reaches sideways on screen this frame (issue #188).
             let mut page_span: Option<(f32, f32)> = None;
@@ -10593,6 +10614,20 @@ impl NoteCraftApp {
         }
         if toggle_full_page {
             self.full_page = !full_page;
+        }
+        if toggle_draw_bar {
+            if self.draw_bar_open {
+                self.draw_bar_open = false;
+                self.draw_bar_minimized = false;
+                self.full_page = false;
+                self.ribbon_collapsed = self.draw_bar_prev_ribbon;
+            } else {
+                self.draw_bar_prev_ribbon = self.ribbon_collapsed;
+                self.draw_bar_open = true;
+                self.draw_bar_minimized = false;
+                self.full_page = true;
+                self.ribbon_collapsed = true;
+            }
         }
         if focus_search {
             self.focus_search = true;
@@ -13287,16 +13322,26 @@ impl NoteCraftApp {
             return;
         }
         self.compact_layout(ctx);
-        self.top_bar(ui);
+        let focus_draw = self.draw_bar_open && self.full_page && self.editor.is_some();
+        if !focus_draw {
+            self.top_bar(ui);
+        }
         self.storage_notice(ui);
-        self.status_bar(ui);
+        if !focus_draw {
+            self.status_bar(ui);
+        }
         self.side_panel(ui);
         self.tags_panel(ui);
         self.templates_panel(ui);
         // In a phone-width window a pane that fills it leaves no room for the page.
         if !self.compact_list_fills() && !(self.compact && (self.tags_pane.is_some() || self.templates_pane.is_some())) {
-            self.section_tabs(ui);
+            if !focus_draw {
+                self.section_tabs(ui);
+            }
             self.central(ui);
+        }
+        if self.draw_bar_open && self.editor.is_some() {
+            self.quick_draw_bar(ctx);
         }
         self.paint_formatting(ctx);
         self.refresh_unread(false);
@@ -13330,6 +13375,175 @@ impl NoteCraftApp {
             } else {
                 ctx.request_repaint_after(AUTOSAVE_AFTER.saturating_sub(waited));
             }
+        }
+    }
+
+    fn quick_draw_bar(&mut self, ctx: &Context) {
+        let tokens = self.tokens;
+        let pointer = self.pointer;
+        let active_nib = self.nib;
+        let minimized = self.draw_bar_minimized;
+        let rack: Vec<(usize, notecraft_ink::Tool, notecraft_ink::Rgb)> =
+            self.rack.iter().take(7).enumerate().map(|(i, n)| (i, n.tool, n.colour)).collect();
+        let mut toggle_min = false;
+        let mut exit_bar = false;
+        let mut set_pointer: Option<ribbon::Pointer> = None;
+        let mut pick_pen: Option<usize> = None;
+        let mut do_undo = false;
+        let mut do_redo = false;
+        let default_x = (ctx.content_rect().center().x - 160.0).max(12.0);
+        let default_y = ctx.content_rect().min.y + 8.0;
+        egui::Area::new(egui::Id::new("quick-draw-bar"))
+            .order(egui::Order::Foreground)
+            .default_pos(egui::pos2(default_x, default_y))
+            .constrain(true)
+            .movable(true)
+            .show(ctx, |ui| {
+                egui::Frame::new()
+                    .fill(tokens.panel)
+                    .inner_margin(egui::Margin::symmetric(8, 5))
+                    .corner_radius(egui::CornerRadius::same(10))
+                    .stroke(egui::Stroke::new(1.0, tokens.container_border))
+                    .show(ui, |ui| {
+                        if minimized {
+                            if icon_toggle(ui, Icon::Pen, true, &tokens, crate::tl_id!("ui.expand_draw_bar"), crate::tl_id!("ui.expand_draw_bar"))
+                                .clicked()
+                            {
+                                toggle_min = true;
+                            }
+                            return;
+                        }
+                        ui.horizontal(|ui| {
+                            if icon_toggle(
+                                ui,
+                                Icon::Minus,
+                                false,
+                                &tokens,
+                                crate::tl_id!("ui.minimize_draw_bar"),
+                                crate::tl_id!("ui.minimize_draw_bar"),
+                            )
+                            .clicked()
+                            {
+                                toggle_min = true;
+                            }
+                            if icon_toggle(
+                                ui,
+                                Icon::CaretLtr,
+                                pointer == ribbon::Pointer::Write,
+                                &tokens,
+                                crate::tl_id!("ui.draw_bar_type"),
+                                crate::tl_id!("ui.draw_bar_type"),
+                            )
+                            .clicked()
+                            {
+                                set_pointer = Some(ribbon::Pointer::Write);
+                            }
+                            ui.separator();
+                            for &(idx, tool, colour) in &rack {
+                                let selected = pointer == ribbon::Pointer::Draw && active_nib == idx;
+                                let (rect, resp) = ui.allocate_exact_size(vec2(22.0, 22.0), Sense::click());
+                                let painter = ui.painter_at(rect);
+                                if selected || resp.hovered() {
+                                    painter.rect_filled(rect, 4.0, if selected { tokens.row_selected } else { tokens.row_hover });
+                                }
+                                let fill = Color32::from_rgb(colour.0, colour.1, colour.2);
+                                if tool == notecraft_ink::Tool::Highlighter {
+                                    painter.rect_filled(rect.shrink(4.0), 3.0, fill);
+                                } else {
+                                    painter.circle_filled(rect.center(), 7.5, fill);
+                                }
+                                if selected {
+                                    painter.rect_stroke(rect.shrink(0.5), 4.0, egui::Stroke::new(1.5, tokens.accent), egui::StrokeKind::Inside);
+                                }
+                                if resp.on_hover_text(crate::tl_id!("ui.draw_bar_pen")).clicked() {
+                                    pick_pen = Some(idx);
+                                }
+                            }
+                            ui.separator();
+                            if icon_toggle(
+                                ui,
+                                Icon::Eraser,
+                                pointer == ribbon::Pointer::Erase,
+                                &tokens,
+                                crate::tl_id!("ui.draw_bar_eraser"),
+                                crate::tl_id!("ui.draw_bar_eraser"),
+                            )
+                            .clicked()
+                            {
+                                set_pointer = Some(ribbon::Pointer::Erase);
+                            }
+                            if icon_toggle(
+                                ui,
+                                Icon::Lasso,
+                                pointer == ribbon::Pointer::Lasso,
+                                &tokens,
+                                crate::tl_id!("ui.draw_bar_lasso"),
+                                crate::tl_id!("ui.draw_bar_lasso"),
+                            )
+                            .clicked()
+                            {
+                                set_pointer = Some(ribbon::Pointer::Lasso);
+                            }
+                            if icon_toggle(
+                                ui,
+                                Icon::Hand,
+                                pointer == ribbon::Pointer::Pan,
+                                &tokens,
+                                crate::tl_id!("ui.draw_bar_pan"),
+                                crate::tl_id!("ui.draw_bar_pan"),
+                            )
+                            .clicked()
+                            {
+                                set_pointer = Some(ribbon::Pointer::Pan);
+                            }
+                            ui.separator();
+                            if icon_toggle(ui, Icon::Undo, false, &tokens, crate::tl_id!("ui.draw_bar_undo"), crate::tl_id!("ui.draw_bar_undo"))
+                                .clicked()
+                            {
+                                do_undo = true;
+                            }
+                            if icon_toggle(ui, Icon::Redo, false, &tokens, crate::tl_id!("ui.draw_bar_redo"), crate::tl_id!("ui.draw_bar_redo"))
+                                .clicked()
+                            {
+                                do_redo = true;
+                            }
+                            if icon_toggle(
+                                ui,
+                                Icon::ExitFullPage,
+                                false,
+                                &tokens,
+                                crate::tl_id!("ui.exit_focus_draw"),
+                                crate::tl_id!("ui.exit_focus_draw"),
+                            )
+                            .clicked()
+                            {
+                                exit_bar = true;
+                            }
+                        });
+                    });
+            });
+        if toggle_min {
+            self.draw_bar_minimized = !self.draw_bar_minimized;
+        }
+        if let Some(p) = set_pointer {
+            self.pointer = p;
+        }
+        if let Some(idx) = pick_pen {
+            self.nib = idx.min(self.rack.len().saturating_sub(1));
+            self.pointer = ribbon::Pointer::Draw;
+            self.remember_rack();
+        }
+        if do_undo {
+            self.undo();
+        }
+        if do_redo {
+            self.step_back(false);
+        }
+        if exit_bar {
+            self.draw_bar_open = false;
+            self.draw_bar_minimized = false;
+            self.full_page = false;
+            self.ribbon_collapsed = self.draw_bar_prev_ribbon;
         }
     }
 }

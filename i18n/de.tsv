@@ -823,3 +823,21 @@
 @id	ui.notebooks_folder_changed	Der Notizbuch-Ordner ist jetzt {folder}.
 @id	ui.could_not_save_the_notebooks_folder_error	Der Notizbuch-Ordner konnte nicht gespeichert werden: {error}
 @id	ui.could_not_open_the_notebooks_folder_error	Der Notizbuch-Ordner konnte nicht geöffnet werden: {error}
+@id	ui.open_notebooks_folder	Notizbuch-Ordner öffnen
+@id	ui.sync_across_devices	Geräteübergreifend synchronisieren
+@id	ui.sync_across_devices_intro	NoteCraft nutzt kein eigenes Cloud-Konto. Notizbücher sind normale Ordner und externe Änderungen werden automatisch live nachgeladen:
+@id	ui.sync_step_1	1. Synchronisiere deinen Notizbuch-Ordner zwischen Geräten mit Syncthing (auf Android z. B. Syncthing-Fork), OneDrive, Nextcloud, Dropbox oder Google Drive.
+@id	ui.sync_step_2	2. Wähle auf jedem Gerät über die Ordner-Buttons oben genau diesen synchronisierten Ordner aus.
+@id	ui.sync_step_3	3. Falls zwei Geräte gleichzeitig offline dieselbe Seite ändern, prüfe Konfliktkopien unter Datei > Prüfen.
+@id	ui.quick_draw_bar	Kompakte Zeichenleiste
+@id	ui.quick_draw_bar_tip	Oberfläche ausblenden und kompakte Zeichenleiste einblenden
+@id	ui.minimize_draw_bar	Leiste einklappen
+@id	ui.expand_draw_bar	Zeichenleiste ausklappen
+@id	ui.exit_focus_draw	Vollständige Oberfläche zeigen
+@id	ui.draw_bar_type	Tippen
+@id	ui.draw_bar_pen	Stift
+@id	ui.draw_bar_eraser	Radierer
+@id	ui.draw_bar_lasso	Lasso
+@id	ui.draw_bar_pan	Verschieben
+@id	ui.draw_bar_undo	Rückgängig
+@id	ui.draw_bar_redo	Wiederholen

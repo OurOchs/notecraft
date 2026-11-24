@@ -756,11 +756,20 @@ fn options_page(
         if !cfg!(target_arch = "wasm32") && open_action(ui, crate::tl_id!("ui.change_notebooks_folder"), 230.0, 34.0, t, true).clicked() {
             acts.push(Act::ChooseNotebooksFolder);
         }
+        if !cfg!(target_arch = "wasm32") && open_action(ui, crate::tl_id!("ui.open_notebooks_folder"), 220.0, 34.0, t, false).clicked() {
+            acts.push(Act::OpenNotebooksFolder);
+        }
         if open_action(ui, crate::tl_id!("ui.use_the_default_notebooks_folder"), 260.0, 34.0, t, false).clicked() {
             acts.push(Act::UseDefaultNotebooksFolder);
         }
     });
     ui.label(egui::RichText::new(crate::tl_id!("ui.notebooks_folder_hint")).size(11.5).color(t.muted));
+    ui.add_space(10.0);
+    ui.label(egui::RichText::new(crate::tl_id!("ui.sync_across_devices")).strong().size(13.5).color(t.strong));
+    ui.label(egui::RichText::new(crate::tl_id!("ui.sync_across_devices_intro")).size(11.5).color(t.text));
+    ui.label(egui::RichText::new(crate::tl_id!("ui.sync_step_1")).size(11.5).color(t.muted));
+    ui.label(egui::RichText::new(crate::tl_id!("ui.sync_step_2")).size(11.5).color(t.muted));
+    ui.label(egui::RichText::new(crate::tl_id!("ui.sync_step_3")).size(11.5).color(t.muted));
     ui.add_space(12.0);
     ui.separator();
     ui.add_space(4.0);

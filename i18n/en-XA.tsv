@@ -1477,3 +1477,21 @@
 @id	ui.collapse_navigation_node	$$$Collapse {title}@@@
 @id	ui.find_on_this_page	$$$Find on this page@@@
 @id	ui.search_prompt	$$$Type to find notes.@@@
+@id	ui.open_notebooks_folder	$$$Open notebooks folder@@@
+@id	ui.sync_across_devices	$$$Sync across devices@@@
+@id	ui.sync_across_devices_intro	$$$NoteCraft has no cloud account of its own. Notebooks are plain folders, and external changes reload live automatically:@@@
+@id	ui.sync_step_1	$$$1. Sync your notebooks folder between devices with Syncthing (e.g. Syncthing-Fork on Android), OneDrive, Nextcloud, Dropbox or Google Drive.@@@
+@id	ui.sync_step_2	$$$2. Select that same synced folder on each device using the folder buttons above.@@@
+@id	ui.sync_step_3	$$$3. If two devices edit the same page offline, review conflict copies under File > Check.@@@
+@id	ui.quick_draw_bar	$$$Focus draw bar@@@
+@id	ui.quick_draw_bar_tip	$$$Hide the chrome and show a compact floating draw bar@@@
+@id	ui.minimize_draw_bar	$$$Collapse bar@@@
+@id	ui.expand_draw_bar	$$$Expand draw bar@@@
+@id	ui.exit_focus_draw	$$$Show full interface@@@
+@id	ui.draw_bar_type	$$$Type@@@
+@id	ui.draw_bar_pen	$$$Pen@@@
+@id	ui.draw_bar_eraser	$$$Eraser@@@
+@id	ui.draw_bar_lasso	$$$Lasso@@@
+@id	ui.draw_bar_pan	$$$Pan@@@
+@id	ui.draw_bar_undo	$$$Undo@@@
+@id	ui.draw_bar_redo	$$$Redo@@@
